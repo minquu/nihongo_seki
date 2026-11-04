@@ -21,6 +21,7 @@ export const DEFAULT_SETTINGS = {
   seatOrder: 'random', // 'random' | 'order'
   pickPresenter: true, // 조마다 발표자 뽑기
   pickMC: true, // 조마다 회화 진행 MC 뽑기 (발표자와 겹치지 않음)
+  pickOrder: true, // 모든 조가 정해진 뒤 발표 순서 랜덤 지정
 };
 
 function loadSettings() {

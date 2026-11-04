@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { parseNames } from '../lib/groups.js';
 import { isValidAssignment, makeAssignment, slotCount } from '../lib/seats.js';
 import { formatDate, storage } from '../lib/storage.js';
+import { isValidOrder } from '../lib/order.js';
 import ResultModal from './ResultModal.jsx';
 
 const OBSTACLE_LABELS = {
@@ -386,6 +387,19 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
           </div>
 
           <div className="field">
+            <span>발표 순서</span>
+            <label className={`check ${settings.pickOrder ? 'on' : ''}`} style={{ alignSelf: 'flex-start' }}>
+              <input
+                type="checkbox"
+                checked={settings.pickOrder}
+                onChange={(e) => set({ pickOrder: e.target.checked })}
+              />
+              🎤 조별 발표 순서 랜덤 지정
+            </label>
+            {settings.pickOrder && <small className="muted">모든 조가 정해진 뒤에 순서를 뽑습니다.</small>}
+          </div>
+
+          <div className="field">
             <span>맵 길이</span>
             <Segmented
               value={settings.mapLength}
@@ -471,6 +485,8 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
           savedAt={lastResult.savedAt}
           onAssignmentChange={(assignment) => setLastResult((r) => ({ ...r, assignment }))}
           onRolesChange={(roles) => setLastResult((r) => ({ ...r, roles }))}
+          order={isValidOrder(lastResult.order, lastResult.groups.length) ? lastResult.order : null}
+          onOrderChange={(order) => setLastResult((r) => ({ ...r, order }))}
           onClose={() => setShowLast(false)}
         />
       )}

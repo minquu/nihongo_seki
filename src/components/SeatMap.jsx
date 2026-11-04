@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { slotPositions } from '../lib/seats.js';
 import { rolesOf } from '../lib/roles.js';
 import RoleBadges from './RoleBadge.jsx';
+import { orderOf } from '../lib/order.js';
 
 const rowLabel = (row, n) => {
   if (n <= 1) return '';
@@ -12,7 +13,7 @@ const rowLabel = (row, n) => {
 /**
  * 교실 자리 배치도. 팀 카드를 드래그하거나, 두 자리를 차례로 클릭하면 서로 바뀐다.
  */
-export default function SeatMap({ layout, groups, assignment, onChange, roles = [] }) {
+export default function SeatMap({ layout, groups, assignment, onChange, roles = [], order = null }) {
   const [dragFrom, setDragFrom] = useState(null);
   const [selected, setSelected] = useState(null);
   const [over, setOver] = useState(null);
@@ -75,6 +76,7 @@ export default function SeatMap({ layout, groups, assignment, onChange, roles = 
           <>
             <div className="team-name">
               {g + 1}조 <small>{groups[g].length}명</small>
+              {orderOf(order, g) && <span className="order-badge">🎤 {orderOf(order, g)}번째 발표</span>}
             </div>
             <div className="desks">
               {groups[g].map((m) => {

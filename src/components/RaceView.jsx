@@ -4,6 +4,7 @@ import GroupBoard from './GroupBoard.jsx';
 import ResultModal from './ResultModal.jsx';
 import { makeAssignment } from '../lib/seats.js';
 import { hasAnyRole, pickRoles } from '../lib/roles.js';
+import { makeOrder } from '../lib/order.js';
 
 const emptyGroups = (sizes) => sizes.map(() => []);
 
@@ -27,6 +28,7 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
   const layout = settings.seatEnabled ? settings.seatLayout : null;
   const [roles, setRoles] = useState([]); // roles[조] = { presenter, mc }
   const roleOptions = { presenter: settings.pickPresenter, mc: settings.pickMC };
+  const [order, setOrder] = useState(null); // 발표 순서 (조 번호 배열)
 
   const showToast = useCallback((title, sub = null) => {
     setToast({ title, sub, id: Date.now() });
@@ -66,7 +68,10 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
         if (settings.seatEnabled) {
           setAssignment(makeAssignment(sizes.length, settings.seatLayout, settings.seatOrder));
         }
-        setTimeout(() => setShowResult(true), 1000);
+        // 모든 조가 확정된 뒤에 발표 순서를 랜덤으로 정한다
+        if (settings.pickOrder) setOrder(makeOrder(sizes.length));
+        // 마지막 조의 역할 발표 토스트를 볼 수 있도록 조금 기다렸다 결과 창을 연다
+        setTimeout(() => setShowResult(true), hasAnyRole(opts) ? 2200 : 1000);
       }
     };
 
@@ -269,6 +274,8 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
           roles={roles}
           roleOptions={roleOptions}
           onRolesChange={setRoles}
+          order={order}
+          onOrderChange={setOrder}
           onClose={() => setShowResult(false)}
           onRestart={onRestart}
           onExit={onExit}
