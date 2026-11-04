@@ -1,4 +1,5 @@
 import Matter from 'matter-js';
+import { splitName } from './names.js';
 
 const { Engine, Bodies, Body, Composite, Events } = Matter;
 
@@ -100,7 +101,7 @@ export class Race {
         frictionAir: 0.008,
         density: 0.0015,
       });
-      const ball = { name, color: ballColor(i), body, still: 0, done: false };
+      const ball = { name, label: splitName(name).main, color: ballColor(i), body, still: 0, done: false };
       this.balls.push(ball);
       this.ballByBodyId.set(body.id, ball);
       Composite.add(this.world, body);
@@ -534,9 +535,9 @@ export class Race {
       if (showNames) {
         ctx.lineWidth = 3 / scale;
         ctx.strokeStyle = 'rgba(8,10,25,0.9)';
-        ctx.strokeText(ball.name, x, y - r - 3);
+        ctx.strokeText(ball.label, x, y - r - 3);
         ctx.fillStyle = '#fff';
-        ctx.fillText(ball.name, x, y - r - 3);
+        ctx.fillText(ball.label, x, y - r - 3);
       }
     }
 
@@ -553,7 +554,7 @@ export class Race {
       ctx.stroke();
       ctx.fillStyle = '#fff';
       ctx.font = `bold ${Math.min(30, 16 / scale)}px system-ui, sans-serif`;
-      ctx.fillText(`${e.rank}등 ${e.ball.name}`, W / 2, e.y - 60 - p * 50);
+      ctx.fillText(`${e.rank}등 ${e.ball.label}`, W / 2, e.y - 60 - p * 50);
     }
     ctx.globalAlpha = 1;
     this.effects = this.effects.filter((e) => e.t < 70);

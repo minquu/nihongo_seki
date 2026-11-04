@@ -27,7 +27,7 @@ body,
 body {
   background: radial-gradient(1200px 600px at 20% -10%, #1d1f45 0%, transparent 60%), var(--bg);
   color: var(--text);
-  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic', system-ui, sans-serif;
 }
 
 button {
@@ -1077,5 +1077,63 @@ textarea.names {
   .order-badge {
     background: #fff !important;
     border: 1px solid #333 !important;
+  }
+}
+
+/* ───────── 긴 이름(한글 + 카타카나) 표시 ───────── */
+.name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.name-main,
+.name-reading {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.name-reading {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+/* 앞에서 지정한 말줄임(…)을 해제하고 전체 이름이 보이게 */
+.member-name,
+.desk-name {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+.member {
+  padding: 7px 10px;
+}
+.board {
+  width: 360px;
+}
+.desks {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+.desk {
+  white-space: normal;
+  overflow: visible;
+  padding: 7px 9px;
+  align-items: center;
+}
+.result-grid {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+.result-group li {
+  padding: 3px 0;
+}
+.modal {
+  width: min(1320px, 100%);
+}
+.order-members {
+  line-height: 1.6;
+}
+
+@media print {
+  .name-reading {
+    color: #333 !important;
   }
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { slotPositions } from '../lib/seats.js';
 import { rolesOf } from '../lib/roles.js';
 import RoleBadges from './RoleBadge.jsx';
+import Name from './Name.jsx';
 import { orderOf } from '../lib/order.js';
 
 const rowLabel = (row, n) => {
@@ -84,7 +85,7 @@ export default function SeatMap({ layout, groups, assignment, onChange, roles = 
                 return (
                   <div key={m.name} className={`desk ${myRoles.map((k) => `has-${k}`).join(' ')}`}>
                     <span className="dot" style={{ background: m.color }} />
-                    <span className="desk-name">{m.name}</span>
+                    <Name name={m.name} className="desk-name" />
                     <RoleBadges name={m.name} role={roles[g]} compact />
                   </div>
                 );

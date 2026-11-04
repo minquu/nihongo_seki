@@ -5,6 +5,7 @@ import { hasAnyRole, pickRoles, ROLE_INFO } from '../lib/roles.js';
 import { makeAssignment, seatsToText } from '../lib/seats.js';
 import { formatDate, storage } from '../lib/storage.js';
 import RoleBadges from './RoleBadge.jsx';
+import Name from './Name.jsx';
 import SeatMap from './SeatMap.jsx';
 
 /**
@@ -220,7 +221,7 @@ export default function ResultModal({
                   {members.map((m) => (
                     <li key={m.name}>
                       <span className="dot" style={{ background: m.color }} />
-                      <span className="member-name">{m.name}</span>
+                      <Name name={m.name} className="member-name" />
                       <RoleBadges name={m.name} role={roles[i]} />
                     </li>
                   ))}

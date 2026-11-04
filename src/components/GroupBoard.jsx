@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import RoleBadges from './RoleBadge.jsx';
+import Name from './Name.jsx';
 
 export default function GroupBoard({ groups, sizes, current, done, roles = [] }) {
   const currentRef = useRef(null);
@@ -30,7 +31,7 @@ export default function GroupBoard({ groups, sizes, current, done, roles = [] })
                 <li key={m.name} className="member">
                   <span className="rank">{m.rank}</span>
                   <span className="dot" style={{ background: m.color }} />
-                  <span className="member-name">{m.name}</span>
+                  <Name name={m.name} className="member-name" />
                   <RoleBadges name={m.name} role={roles[i]} />
                 </li>
               ))}
