@@ -358,6 +358,34 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
           </div>
 
           <div className="field">
+            <span>조별 역할 뽑기</span>
+            <div className="checks">
+              <label className={`check ${settings.pickPresenter ? 'on' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={settings.pickPresenter}
+                  onChange={(e) => set({ pickPresenter: e.target.checked })}
+                />
+                📢 발표자
+              </label>
+              <label className={`check ${settings.pickMC ? 'on' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={settings.pickMC}
+                  onChange={(e) => set({ pickMC: e.target.checked })}
+                />
+                🎙️ MC (회화 진행)
+              </label>
+            </div>
+            {(settings.pickPresenter || settings.pickMC) && (
+              <small className="muted">
+                조 인원이 다 차면 그 조 안에서 랜덤으로 뽑습니다.
+                {settings.pickPresenter && settings.pickMC && ' 발표자와 MC는 겹치지 않습니다.'}
+              </small>
+            )}
+          </div>
+
+          <div className="field">
             <span>맵 길이</span>
             <Segmented
               value={settings.mapLength}
@@ -438,8 +466,11 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
           groups={lastResult.groups}
           layout={lastResult.layout}
           assignment={lastResult.assignment}
+          roles={lastResult.roles ?? []}
+          roleOptions={lastResult.roleOptions ?? { presenter: false, mc: false }}
           savedAt={lastResult.savedAt}
           onAssignmentChange={(assignment) => setLastResult((r) => ({ ...r, assignment }))}
+          onRolesChange={(roles) => setLastResult((r) => ({ ...r, roles }))}
           onClose={() => setShowLast(false)}
         />
       )}

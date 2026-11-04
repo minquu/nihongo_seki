@@ -40,9 +40,16 @@ export function computeGroupSizes(total, mode, value, remainder = 'spread') {
   return sizes;
 }
 
-export function groupsToText(title, groups) {
-  const lines = groups.map(
-    (members, i) => `${i + 1}조 (${members.length}명): ${members.map((m) => m.name).join(', ')}`,
-  );
+export function groupsToText(title, groups, roles = []) {
+  const lines = groups.map((members, i) => {
+    const role = roles[i];
+    const names = members.map((m) => {
+      const tags = [];
+      if (role?.presenter === m.name) tags.push('발표자');
+      if (role?.mc === m.name) tags.push('MC');
+      return tags.length ? `${m.name}(${tags.join(', ')})` : m.name;
+    });
+    return `${i + 1}조 (${members.length}명): ${names.join(', ')}`;
+  });
   return [title, '', ...lines].join('\n');
 }

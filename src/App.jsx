@@ -19,6 +19,8 @@ export const DEFAULT_SETTINGS = {
   seatEnabled: true,
   seatLayout: DEFAULT_LAYOUT, // 분단별 팀 수 (1분단 2팀, 2분단 1팀, 3분단 2팀)
   seatOrder: 'random', // 'random' | 'order'
+  pickPresenter: true, // 조마다 발표자 뽑기
+  pickMC: true, // 조마다 회화 진행 MC 뽑기 (발표자와 겹치지 않음)
 };
 
 function loadSettings() {

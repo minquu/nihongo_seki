@@ -3,6 +3,7 @@ import { Race, WORLD_W } from '../lib/race.js';
 import GroupBoard from './GroupBoard.jsx';
 import ResultModal from './ResultModal.jsx';
 import { makeAssignment } from '../lib/seats.js';
+import { hasAnyRole, pickRoles } from '../lib/roles.js';
 
 const emptyGroups = (sizes) => sizes.map(() => []);
 
@@ -10,7 +11,7 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
   const raceRef = useRef(null);
-  const assignRef = useRef({ idx: 0, groups: emptyGroups(sizes) });
+  const assignRef = useRef({ idx: 0, groups: emptyGroups(sizes), roles: [] });
   const toastTimer = useRef(null);
 
   const [mapSeed, setMapSeed] = useState(0);
@@ -24,23 +25,37 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
   const [showResult, setShowResult] = useState(false);
   const [assignment, setAssignment] = useState(null);
   const layout = settings.seatEnabled ? settings.seatLayout : null;
+  const [roles, setRoles] = useState([]); // roles[조] = { presenter, mc }
+  const roleOptions = { presenter: settings.pickPresenter, mc: settings.pickMC };
 
-  const showToast = useCallback((text) => {
-    setToast(text);
+  const showToast = useCallback((title, sub = null) => {
+    setToast({ title, sub, id: Date.now() });
     clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 1600);
+    toastTimer.current = setTimeout(() => setToast(null), sub ? 2600 : 1600);
   }, []);
 
   // 레이스(맵) 생성
   useEffect(() => {
-    assignRef.current = { idx: 0, groups: emptyGroups(sizes) };
+    assignRef.current = { idx: 0, groups: emptyGroups(sizes), roles: [] };
+    setRoles([]);
+    const opts = { presenter: settings.pickPresenter, mc: settings.pickMC };
 
     const onFinish = (ball, rank) => {
       const a = assignRef.current;
       const idx = a.idx;
       a.groups[idx].push({ name: ball.name, color: ball.color, rank });
       if (a.groups[idx].length >= sizes[idx]) {
-        showToast(`${idx + 1}조 완성!`);
+        // 조가 완성되는 순간 그 조의 발표자 / MC를 뽑는다
+        let sub = null;
+        if (hasAnyRole(opts)) {
+          const role = pickRoles(a.groups[idx], opts);
+          a.roles[idx] = role;
+          setRoles([...a.roles]);
+          sub = [role.presenter && `📢 발표자 ${role.presenter}`, role.mc && `🎙️ MC ${role.mc}`]
+            .filter(Boolean)
+            .join('  ·  ');
+        }
+        showToast(`${idx + 1}조 완성!`, sub);
         if (idx < sizes.length - 1) a.idx = idx + 1;
       }
       setGroups(a.groups.map((g) => [...g]));
@@ -234,9 +249,14 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
             </div>
           )}
           {phase === 'paused' && <div className="paused-label">일시정지</div>}
-          {toast && <div className="toast">{toast}</div>}
+          {toast && (
+            <div key={toast.id} className={`toast ${toast.sub ? 'long' : ''}`}>
+              {toast.title}
+              {toast.sub && <div className="toast-sub">{toast.sub}</div>}
+            </div>
+          )}
         </div>
-        <GroupBoard groups={groups} sizes={sizes} current={current} done={phase === 'done'} />
+        <GroupBoard groups={groups} sizes={sizes} current={current} done={phase === 'done'} roles={roles} />
       </main>
 
       {showResult && (
@@ -246,6 +266,9 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
           layout={layout}
           assignment={assignment}
           onAssignmentChange={setAssignment}
+          roles={roles}
+          roleOptions={roleOptions}
+          onRolesChange={setRoles}
           onClose={() => setShowResult(false)}
           onRestart={onRestart}
           onExit={onExit}

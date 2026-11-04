@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { slotPositions } from '../lib/seats.js';
+import { rolesOf } from '../lib/roles.js';
+import RoleBadges from './RoleBadge.jsx';
 
 const rowLabel = (row, n) => {
   if (n <= 1) return '';
@@ -10,7 +12,7 @@ const rowLabel = (row, n) => {
 /**
  * 교실 자리 배치도. 팀 카드를 드래그하거나, 두 자리를 차례로 클릭하면 서로 바뀐다.
  */
-export default function SeatMap({ layout, groups, assignment, onChange }) {
+export default function SeatMap({ layout, groups, assignment, onChange, roles = [] }) {
   const [dragFrom, setDragFrom] = useState(null);
   const [selected, setSelected] = useState(null);
   const [over, setOver] = useState(null);
@@ -75,12 +77,16 @@ export default function SeatMap({ layout, groups, assignment, onChange }) {
               {g + 1}조 <small>{groups[g].length}명</small>
             </div>
             <div className="desks">
-              {groups[g].map((m) => (
-                <div key={m.name} className="desk">
-                  <span className="dot" style={{ background: m.color }} />
-                  {m.name}
-                </div>
-              ))}
+              {groups[g].map((m) => {
+                const myRoles = rolesOf(m.name, roles[g]);
+                return (
+                  <div key={m.name} className={`desk ${myRoles.map((k) => `has-${k}`).join(' ')}`}>
+                    <span className="dot" style={{ background: m.color }} />
+                    <span className="desk-name">{m.name}</span>
+                    <RoleBadges name={m.name} role={roles[g]} compact />
+                  </div>
+                );
+              })}
             </div>
           </>
         )}
