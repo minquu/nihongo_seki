@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import RoleBadges from './RoleBadge.jsx';
 import Name from './Name.jsx';
+import { useI18n } from '../i18n/index.jsx';
 
 export default function GroupBoard({ groups, sizes, current, done, roles = [] }) {
+  const { t } = useI18n();
   const currentRef = useRef(null);
 
   useEffect(() => {
@@ -18,13 +20,11 @@ export default function GroupBoard({ groups, sizes, current, done, roles = [] })
         return (
           <div key={i} ref={i === current ? currentRef : null} className={`group ${status}`}>
             <div className="group-head">
-              <strong>{i + 1}조</strong>
+              <strong>{t('group', { n: i + 1 })}</strong>
               <span className="count">
                 {members.length}/{size}
               </span>
-              <span className="status">
-                {status === 'full' ? '완성' : status === 'current' ? '배정 중' : '대기'}
-              </span>
+              <span className="status">{t(`board.${status}`)}</span>
             </div>
             <ol className="members">
               {members.map((m) => (

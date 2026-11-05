@@ -3,17 +3,10 @@ import { parseNames } from '../lib/groups.js';
 import { isValidAssignment, makeAssignment, slotCount } from '../lib/seats.js';
 import { formatDate, storage } from '../lib/storage.js';
 import { isValidOrder } from '../lib/order.js';
+import { displayTitle, LANGS, LangSwitch, useI18n } from '../i18n/index.jsx';
 import ResultModal from './ResultModal.jsx';
 
-const OBSTACLE_LABELS = {
-  pegs: '핀 (Plinko)',
-  spinners: '회전 막대',
-  bumpers: '범퍼',
-  sliders: '이동 막대',
-  ramps: '경사로',
-};
-
-const SAMPLE = ['김민수', '이서연', '박지훈', '최유나', '정하준', '강서윤', '조민재', '윤지아', '장도현', '임수아', '한예준', '오하린'];
+const OBSTACLE_KEYS = ['pegs', 'spinners', 'bumpers', 'sliders', 'ramps'];
 
 function Segmented({ value, options, onChange }) {
   return (
@@ -48,6 +41,7 @@ function MiniStepper({ value, min, max, onChange, unit }) {
 }
 
 function RosterBar({ namesText, onLoad }) {
+  const { t, locale } = useI18n();
   const [rosters, setRosters] = useState(storage.loadRosters);
   const [selectedId, setSelectedId] = useState('');
   const lastUsed = storage.loadLastUsed();
@@ -57,8 +51,7 @@ function RosterBar({ namesText, onLoad }) {
     storage.saveRosters(list);
   };
 
-  const confirmReplace = () =>
-    !namesText.trim() || confirm('지금 입력된 명단을 바꿀까요?');
+  const confirmReplace = () => !namesText.trim() || confirm(t('roster.confirmReplace'));
 
   const load = (id) => {
     setSelectedId(id);
@@ -68,7 +61,7 @@ function RosterBar({ namesText, onLoad }) {
 
   const save = () => {
     const current = rosters.find((x) => x.id === selectedId);
-    const name = prompt('명단 이름을 입력하세요 (같은 이름이면 덮어씁니다)', current?.name ?? '');
+    const name = prompt(t('roster.promptName'), current?.name ?? '');
     if (!name?.trim()) return;
     const existing = rosters.find((x) => x.name === name.trim());
     const entry = {
@@ -83,7 +76,7 @@ function RosterBar({ namesText, onLoad }) {
 
   const remove = () => {
     const r = rosters.find((x) => x.id === selectedId);
-    if (!r || !confirm(`"${r.name}" 명단을 삭제할까요?`)) return;
+    if (!r || !confirm(t('roster.confirmDelete', { name: r.name }))) return;
     update(rosters.filter((x) => x.id !== selectedId));
     setSelectedId('');
   };
@@ -93,33 +86,33 @@ function RosterBar({ namesText, onLoad }) {
       {lastUsed && lastUsed.namesText !== namesText && (
         <div className="last-used">
           <span>
-            지난번 사용한 명단 <b>{lastUsed.count}명</b>
-            <small> · {formatDate(lastUsed.usedAt)}</small>
+            {t('roster.lastUsed')} <b>{t('people', { n: lastUsed.count })}</b>
+            <small> · {formatDate(lastUsed.usedAt, locale)}</small>
           </span>
           <button
             type="button"
             className="primary"
             onClick={() => confirmReplace() && onLoad(lastUsed.namesText)}
           >
-            불러오기
+            {t('roster.load')}
           </button>
         </div>
       )}
       <div className="row gap">
         <select value={selectedId} onChange={(e) => load(e.target.value)}>
-          <option value="">저장된 명단 선택…</option>
+          <option value="">{t('roster.select')}</option>
           {rosters.map((r) => (
             <option key={r.id} value={r.id}>
-              {r.name} ({parseNames(r.namesText).length}명)
+              {r.name} ({t('people', { n: parseNames(r.namesText).length })})
             </option>
           ))}
         </select>
         <button type="button" className="ghost" onClick={save} disabled={!namesText.trim()}>
-          💾 명단 저장
+          {t('roster.save')}
         </button>
         {selectedId && (
           <button type="button" className="ghost danger" onClick={remove}>
-            삭제
+            {t('roster.delete')}
           </button>
         )}
       </div>
@@ -128,6 +121,7 @@ function RosterBar({ namesText, onLoad }) {
 }
 
 function SeatLayoutEditor({ settings, set, groupCount }) {
+  const { t } = useI18n();
   const layout = settings.seatLayout;
   const slots = slotCount(layout);
   const setLayout = (next) => set({ seatLayout: next });
@@ -135,14 +129,14 @@ function SeatLayoutEditor({ settings, set, groupCount }) {
   return (
     <section className="card wide">
       <div className="card-title">
-        <h2>자리 배치</h2>
+        <h2>{t('seat.title')}</h2>
         <label className="check-line">
           <input
             type="checkbox"
             checked={settings.seatEnabled}
             onChange={(e) => set({ seatEnabled: e.target.checked })}
           />
-          레이스가 끝나면 팀별 자리 지정
+          {t('seat.enable')}
         </label>
       </div>
 
@@ -150,15 +144,15 @@ function SeatLayoutEditor({ settings, set, groupCount }) {
         <div className="seat-setup">
           <div className="seat-editor">
             <div className="field">
-              <span>분단별 팀 수 (앞 → 뒤로 배치)</span>
+              <span>{t('seat.perColumn')}</span>
               {layout.map((n, i) => (
                 <div key={i} className="bundan-row">
-                  <span className="bundan-name">{i + 1}분단</span>
+                  <span className="bundan-name">{t('column', { n: i + 1 })}</span>
                   <MiniStepper
                     value={n}
                     min={1}
                     max={6}
-                    unit="팀"
+                    unit={t('unit.teams')}
                     onChange={(v) => setLayout(layout.map((x, j) => (j === i ? v : x)))}
                   />
                 </div>
@@ -170,7 +164,7 @@ function SeatLayoutEditor({ settings, set, groupCount }) {
                   disabled={layout.length >= 6}
                   onClick={() => setLayout([...layout, 1])}
                 >
-                  + 분단 추가
+                  {t('seat.addColumn')}
                 </button>
                 <button
                   type="button"
@@ -178,18 +172,18 @@ function SeatLayoutEditor({ settings, set, groupCount }) {
                   disabled={layout.length <= 1}
                   onClick={() => setLayout(layout.slice(0, -1))}
                 >
-                  − 분단 삭제
+                  {t('seat.removeColumn')}
                 </button>
               </div>
             </div>
 
             <div className="field">
-              <span>팀 → 자리 배정 방식</span>
+              <span>{t('seat.method')}</span>
               <Segmented
                 value={settings.seatOrder}
                 options={[
-                  ['random', '🎲 랜덤'],
-                  ['order', '1조부터 순서대로'],
+                  ['random', t('seat.random')],
+                  ['order', t('seat.inOrder')],
                 ]}
                 onChange={(seatOrder) => set({ seatOrder })}
               />
@@ -198,25 +192,25 @@ function SeatLayoutEditor({ settings, set, groupCount }) {
             {groupCount > 0 && groupCount !== slots && (
               <div className="mismatch">
                 <span>
-                  자리는 <b>{slots}팀</b>분인데 그룹은 <b>{groupCount}개</b>입니다.
-                  {groupCount > slots ? ' 남는 조는 "자리 미배정"으로 표시됩니다.' : ' 빈 자리가 생깁니다.'}
+                  {t('seat.mismatch', { slots, groups: groupCount })}{' '}
+                  {groupCount > slots ? t('seat.mismatchMore') : t('seat.mismatchLess')}
                 </span>
                 <button type="button" className="ghost" onClick={() => set({ mode: 'count', value: slots })}>
-                  그룹 수를 {slots}개로 맞추기
+                  {t('seat.fit', { n: slots })}
                 </button>
               </div>
             )}
           </div>
 
-          <div className="mini-classroom" aria-label="자리 배치 미리보기">
-            <div className="blackboard small">칠판</div>
-            <div className="bundans" style={{ gridTemplateColumns: `repeat(${layout.length}, 1fr)` }}>
+          <div className="mini-classroom" aria-label={t('seat.preview')}>
+            <div className="blackboard small">{t('blackboard.short')}</div>
+            <div className="bundans" style={{ gridTemplateColumns: `repeat(${layout.length}, minmax(0, 1fr))` }}>
               {layout.map((n, i) => (
                 <div key={i} className="bundan">
-                  <div className="bundan-label">{i + 1}분단</div>
+                  <div className="bundan-label">{t('column', { n: i + 1 })}</div>
                   {Array.from({ length: n }, (_, r) => (
                     <div key={r} className="mini-slot">
-                      팀
+                      {t('seat.team')}
                     </div>
                   ))}
                 </div>
@@ -229,7 +223,8 @@ function SeatLayoutEditor({ settings, set, groupCount }) {
   );
 }
 
-export default function SetupPanel({ settings, setSettings, names, sizes, onStart }) {
+export default function SetupPanel({ settings, setSettings, names, sizes, title, lang, setLang, onStart }) {
+  const { t, locale } = useI18n();
   const set = (patch) => setSettings((s) => ({ ...s, ...patch }));
   const setObstacle = (key, on) =>
     setSettings((s) => ({ ...s, obstacles: { ...s.obstacles, [key]: on } }));
@@ -255,70 +250,85 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
     <div className="setup">
       <header className="setup-header">
         <div>
-          <h1>🎱 랜덤 조 편성 레이스</h1>
-          <p>공이 떨어지는 순서대로 조가 정해집니다.</p>
+          <h1>{t('app.title')}</h1>
+          <p>{t('app.subtitle')}</p>
         </div>
-        {lastResult && (
-          <button type="button" className="ghost" onClick={openLastResult}>
-            📋 지난 결과 보기 <small className="muted">({formatDate(lastResult.savedAt)})</small>
-          </button>
-        )}
+        <div className="setup-header-actions">
+          <LangSwitch lang={lang} onChange={setLang} />
+          {lastResult && (
+            <button type="button" className="ghost" onClick={openLastResult}>
+              {t('lastResult.open')}{' '}
+              <small className="muted">({formatDate(lastResult.savedAt, locale)})</small>
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="setup-grid">
         <section className="card">
           <div className="card-title">
-            <h2>참가자</h2>
-            <span className="badge">{names.length}명</span>
+            <h2>{t('participants')}</h2>
+            <span className="badge">{t('people', { n: names.length })}</span>
           </div>
           <RosterBar namesText={settings.namesText} onLoad={(namesText) => set({ namesText })} />
           <textarea
             className="names"
             value={settings.namesText}
-            placeholder={'한 줄에 한 명씩 입력하세요\n(쉼표로 구분해도 됩니다)'}
+            placeholder={t('names.placeholder')}
             onChange={(e) => set({ namesText: e.target.value })}
           />
           <div className="row gap">
-            <button type="button" className="ghost" onClick={() => set({ namesText: SAMPLE.join('\n') })}>
-              예시 넣기
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => set({ namesText: LANGS[lang].sample.join('\n') })}
+            >
+              {t('names.sample')}
             </button>
             <button
               type="button"
               className="ghost"
-              onClick={() => set({ namesText: names.slice().sort((a, b) => a.localeCompare(b, 'ko')).join('\n') })}
+              onClick={() =>
+                set({ namesText: names.slice().sort((a, b) => a.localeCompare(b, lang)).join('\n') })
+              }
               disabled={names.length < 2}
             >
-              가나다 정렬
+              {t('names.sort')}
             </button>
             <button type="button" className="ghost danger" onClick={() => set({ namesText: '' })}>
-              비우기
+              {t('names.clear')}
             </button>
           </div>
-          <small className="muted">입력한 명단은 이 브라우저에 자동 저장됩니다.</small>
+          <small className="muted">{t('names.autosave')}</small>
         </section>
 
         <section className="card">
-          <h2>설정</h2>
+          <h2>{t('settings')}</h2>
 
           <label className="field">
-            <span>제목</span>
-            <input type="text" value={settings.title} onChange={(e) => set({ title: e.target.value })} />
+            <span>{t('settings.title')}</span>
+            <input
+              type="text"
+              value={title === t('defaultTitle') ? '' : title}
+              placeholder={t('defaultTitle')}
+              onChange={(e) => set({ title: e.target.value })}
+            />
           </label>
 
           <div className="field">
-            <span>그룹 나누는 방식</span>
+            <span>{t('mode.label')}</span>
             <Segmented
               value={settings.mode}
               options={[
-                ['size', '그룹당 인원'],
-                ['count', '그룹 수'],
+                ['size', t('mode.size')],
+                ['count', t('mode.count')],
               ]}
               onChange={(mode) => set({ mode })}
             />
           </div>
 
           <div className="field">
-            <span>{settings.mode === 'size' ? '한 그룹 인원' : '그룹 개수'}</span>
+            <span>{settings.mode === 'size' ? t('value.size') : t('value.count')}</span>
             <div className="stepper">
               <button type="button" onClick={() => set({ value: Math.max(1, value - 1) })}>−</button>
               <input
@@ -328,18 +338,18 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
                 onChange={(e) => set({ value: e.target.value })}
               />
               <button type="button" onClick={() => set({ value: value + 1 })}>+</button>
-              <em>{settings.mode === 'size' ? '명' : '개 조'}</em>
+              <em>{settings.mode === 'size' ? t('unit.people') : t('unit.groups')}</em>
             </div>
           </div>
 
           {settings.mode === 'size' && names.length % Math.max(1, value) !== 0 && names.length > value && (
             <div className="field">
-              <span>남는 인원 처리</span>
+              <span>{t('remainder.label')}</span>
               <Segmented
                 value={settings.remainder}
                 options={[
-                  ['spread', '앞 조부터 한 명씩 추가'],
-                  ['separate', '남은 인원끼리 한 조'],
+                  ['spread', t('remainder.spread')],
+                  ['separate', t('remainder.separate')],
                 ]}
                 onChange={(remainder) => set({ remainder })}
               />
@@ -348,18 +358,18 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
 
           <div className="preview">
             {sizes.length === 0 ? (
-              <span className="muted">참가자를 2명 이상 입력하세요</span>
+              <span className="muted">{t('preview.empty')}</span>
             ) : (
               sizes.map((n, i) => (
                 <span key={i} className="chip">
-                  {i + 1}조 <b>{n}명</b>
+                  {t('group', { n: i + 1 })} <b>{t('people', { n })}</b>
                 </span>
               ))
             )}
           </div>
 
           <div className="field">
-            <span>조별 역할 뽑기</span>
+            <span>{t('roles.label')}</span>
             <div className="checks">
               <label className={`check ${settings.pickPresenter ? 'on' : ''}`}>
                 <input
@@ -367,7 +377,7 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
                   checked={settings.pickPresenter}
                   onChange={(e) => set({ pickPresenter: e.target.checked })}
                 />
-                📢 발표자
+                {t('roles.presenterSetting')}
               </label>
               <label className={`check ${settings.pickMC ? 'on' : ''}`}>
                 <input
@@ -375,58 +385,58 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
                   checked={settings.pickMC}
                   onChange={(e) => set({ pickMC: e.target.checked })}
                 />
-                🎙️ MC (회화 진행)
+                {t('roles.mcSetting')}
               </label>
             </div>
             {(settings.pickPresenter || settings.pickMC) && (
               <small className="muted">
-                조 인원이 다 차면 그 조 안에서 랜덤으로 뽑습니다.
-                {settings.pickPresenter && settings.pickMC && ' 발표자와 MC는 겹치지 않습니다.'}
+                {t('roles.hint')}
+                {settings.pickPresenter && settings.pickMC && ` ${t('roles.hintNoOverlap')}`}
               </small>
             )}
           </div>
 
           <div className="field">
-            <span>발표 순서</span>
+            <span>{t('order.label')}</span>
             <label className={`check ${settings.pickOrder ? 'on' : ''}`} style={{ alignSelf: 'flex-start' }}>
               <input
                 type="checkbox"
                 checked={settings.pickOrder}
                 onChange={(e) => set({ pickOrder: e.target.checked })}
               />
-              🎤 조별 발표 순서 랜덤 지정
+              {t('order.setting')}
             </label>
-            {settings.pickOrder && <small className="muted">모든 조가 정해진 뒤에 순서를 뽑습니다.</small>}
+            {settings.pickOrder && <small className="muted">{t('order.hint')}</small>}
           </div>
 
           <div className="field">
-            <span>맵 길이</span>
+            <span>{t('map.label')}</span>
             <Segmented
               value={settings.mapLength}
               options={[
-                ['short', '짧게'],
-                ['normal', '보통'],
-                ['long', '길게'],
+                ['short', t('map.short')],
+                ['normal', t('map.normal')],
+                ['long', t('map.long')],
               ]}
               onChange={(mapLength) => set({ mapLength })}
             />
           </div>
 
           <div className="field">
-            <span>공 크기</span>
+            <span>{t('ball.label')}</span>
             <Segmented
               value={settings.ballSize}
               options={[
-                ['auto', '자동'],
-                ['small', '작게'],
-                ['large', '크게'],
+                ['auto', t('ball.auto')],
+                ['small', t('ball.small')],
+                ['large', t('ball.large')],
               ]}
               onChange={(ballSize) => set({ ballSize })}
             />
           </div>
 
           <div className="field">
-            <span>기본 속도</span>
+            <span>{t('speed.label')}</span>
             <Segmented
               value={settings.speed}
               options={[
@@ -439,20 +449,20 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
           </div>
 
           <div className="field">
-            <span>장애물</span>
+            <span>{t('obstacles.label')}</span>
             <div className="checks">
-              {Object.entries(OBSTACLE_LABELS).map(([key, label]) => (
+              {OBSTACLE_KEYS.map((key) => (
                 <label key={key} className={`check ${settings.obstacles[key] ? 'on' : ''}`}>
                   <input
                     type="checkbox"
                     checked={settings.obstacles[key]}
                     onChange={(e) => setObstacle(key, e.target.checked)}
                   />
-                  {label}
+                  {t(`obstacles.${key}`)}
                 </label>
               ))}
             </div>
-            {!anyObstacle && <small className="warn">장애물을 하나 이상 선택하세요</small>}
+            {!anyObstacle && <small className="warn">{t('obstacles.none')}</small>}
           </div>
 
           <label className="check-line">
@@ -461,7 +471,7 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
               checked={settings.showNames}
               onChange={(e) => set({ showNames: e.target.checked })}
             />
-            공 위에 이름 표시
+            {t('showNames')}
           </label>
         </section>
 
@@ -470,13 +480,13 @@ export default function SetupPanel({ settings, setSettings, names, sizes, onStar
 
       <div className="setup-footer">
         <button type="button" className="primary big" disabled={!canStart} onClick={onStart}>
-          레이스 준비 →
+          {t('ready')}
         </button>
       </div>
 
       {showLast && lastResult && (
         <ResultModal
-          title={lastResult.title}
+          title={displayTitle(lastResult.title, lang)}
           groups={lastResult.groups}
           layout={lastResult.layout}
           assignment={lastResult.assignment}

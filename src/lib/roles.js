@@ -1,6 +1,7 @@
+// 표시 문구는 i18n 사전의 role.presenter / role.presenterShort / role.mc / role.mcShort
 export const ROLE_INFO = {
-  presenter: { icon: '📢', label: '발표자', short: '발표' },
-  mc: { icon: '🎙️', label: 'MC', short: 'MC' },
+  presenter: { icon: '📢', labelKey: 'role.presenter', shortKey: 'role.presenterShort' },
+  mc: { icon: '🎙️', labelKey: 'role.mc', shortKey: 'role.mcShort' },
 };
 
 /**

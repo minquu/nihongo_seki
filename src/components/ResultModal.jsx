@@ -4,6 +4,7 @@ import { makeOrder, moveInOrder, orderOf, orderToText } from '../lib/order.js';
 import { hasAnyRole, pickRoles, ROLE_INFO } from '../lib/roles.js';
 import { makeAssignment, seatsToText } from '../lib/seats.js';
 import { formatDate, storage } from '../lib/storage.js';
+import { useI18n } from '../i18n/index.jsx';
 import RoleBadges from './RoleBadge.jsx';
 import Name from './Name.jsx';
 import SeatMap from './SeatMap.jsx';
@@ -29,14 +30,12 @@ export default function ResultModal({
   onRestart,
   onExit,
 }) {
-  const tabs = [
-    layout && ['seats', '🪑 자리 배치'],
-    order && ['order', '🎤 발표 순서'],
-    ['groups', '👥 조 편성'],
-  ].filter(Boolean);
-  const [tab, setTab] = useState(tabs[0][0]);
+  const { t, locale } = useI18n();
+  const tabs = [layout && 'seats', order && 'order', 'groups'].filter(Boolean);
+  const [tab, setTab] = useState(tabs[0]);
   const [copied, setCopied] = useState(false);
   const showRoles = hasAnyRole(roleOptions);
+  const groupName = (g) => t('group', { n: g + 1 });
 
   // 결과를 저장해 두고 다음에 설정 화면에서 다시 볼 수 있게 한다
   useEffect(() => {
@@ -62,28 +61,30 @@ export default function ResultModal({
   };
 
   const copy = async () => {
-    const parts = [groupsToText(title, groups, roles)];
-    if (order) parts.push(orderToText(order, roles));
-    if (layout) parts.push(seatsToText(layout, assignment));
+    const parts = [groupsToText(title, groups, roles, t)];
+    if (order) parts.push(orderToText(order, roles, t));
+    if (layout) parts.push(seatsToText(layout, assignment, t));
     try {
       await navigator.clipboard.writeText(parts.join('\n\n'));
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      alert('클립보드 복사에 실패했습니다.');
+      alert(t('copyFail'));
     }
   };
 
   const orderBadge = (g) =>
-    orderOf(order, g) && <span className="order-badge">🎤 {orderOf(order, g)}번째</span>;
+    orderOf(order, g) && <span className="order-badge">🎤 {t('order.nth', { n: orderOf(order, g) })}</span>;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2>🎉 {title}</h2>
-          {savedAt && <span className="muted small-text">{formatDate(savedAt)} 결과</span>}
-          <button type="button" className="ghost close no-print" onClick={onClose} aria-label="닫기">
+          {savedAt && (
+            <span className="muted small-text">{t('result.savedAt', { date: formatDate(savedAt, locale) })}</span>
+          )}
+          <button type="button" className="ghost close no-print" onClick={onClose} aria-label={t('close')}>
             ✕
           </button>
         </div>
@@ -91,9 +92,9 @@ export default function ResultModal({
         <div className="row gap no-print modal-tools">
           {tabs.length > 1 && (
             <div className="segmented tabs">
-              {tabs.map(([key, label]) => (
+              {tabs.map((key) => (
                 <button key={key} type="button" className={tab === key ? 'active' : ''} onClick={() => setTab(key)}>
-                  {label}
+                  {t(`tab.${key}`)}
                 </button>
               ))}
             </div>
@@ -101,19 +102,16 @@ export default function ResultModal({
           {showRoles && (
             <>
               <span className="role-legend">
-                {roleOptions.presenter && (
-                  <span className="role-badge presenter">
-                    {ROLE_INFO.presenter.icon} {ROLE_INFO.presenter.label}
-                  </span>
-                )}
-                {roleOptions.mc && (
-                  <span className="role-badge mc">
-                    {ROLE_INFO.mc.icon} {ROLE_INFO.mc.label}
-                  </span>
-                )}
+                {['presenter', 'mc']
+                  .filter((k) => roleOptions[k])
+                  .map((k) => (
+                    <span key={k} className={`role-badge ${k}`}>
+                      {ROLE_INFO[k].icon} {t(ROLE_INFO[k].labelKey)}
+                    </span>
+                  ))}
               </span>
               <button type="button" className="ghost" onClick={rerollAll}>
-                🎲 역할 다시 뽑기
+                {t('roles.reroll')}
               </button>
             </>
           )}
@@ -127,14 +125,14 @@ export default function ResultModal({
                 className="ghost"
                 onClick={() => onAssignmentChange(makeAssignment(groups.length, layout, 'random'))}
               >
-                🎲 자리 랜덤 재배치
+                {t('seat.reshuffle')}
               </button>
               <button
                 type="button"
                 className="ghost"
                 onClick={() => onAssignmentChange(makeAssignment(groups.length, layout, 'order'))}
               >
-                1조부터 순서대로
+                {t('seat.inOrder')}
               </button>
             </div>
             <SeatMap
@@ -152,9 +150,9 @@ export default function ResultModal({
           <>
             <div className="row gap no-print seat-tools">
               <button type="button" className="ghost" onClick={() => onOrderChange?.(makeOrder(groups.length))}>
-                🎲 발표 순서 다시 뽑기
+                {t('order.reroll')}
               </button>
-              <span className="muted small-text">↑↓ 버튼으로 직접 바꿀 수도 있어요</span>
+              <span className="muted small-text">{t('order.manual')}</span>
             </div>
             <ol className="order-list">
               {order.map((g, k) => {
@@ -164,13 +162,17 @@ export default function ResultModal({
                     <div className="order-num">{k + 1}</div>
                     <div className="order-body">
                       <div className="order-title">
-                        <b>{g + 1}조</b>
+                        <b>{groupName(g)}</b>
                         {role?.presenter && (
-                          <span className="role-badge presenter">📢 발표자 {role.presenter}</span>
+                          <span className="role-badge presenter">
+                            {t('toast.presenter', { name: role.presenter })}
+                          </span>
                         )}
-                        {role?.mc && <span className="role-badge mc">🎙️ MC {role.mc}</span>}
+                        {role?.mc && <span className="role-badge mc">{t('toast.mc', { name: role.mc })}</span>}
                       </div>
-                      <div className="order-members">{groups[g].map((m) => m.name).join(' · ')}</div>
+                      <div className="order-members">
+                        {groups[g].map((m) => m.name).join(t('text.nameSep'))}
+                      </div>
                     </div>
                     <div className="order-move no-print">
                       <button
@@ -178,7 +180,7 @@ export default function ResultModal({
                         className="ghost"
                         disabled={k === 0}
                         onClick={() => onOrderChange?.(moveInOrder(order, k, k - 1))}
-                        aria-label="앞으로"
+                        aria-label={t('order.up')}
                       >
                         ↑
                       </button>
@@ -187,7 +189,7 @@ export default function ResultModal({
                         className="ghost"
                         disabled={k === order.length - 1}
                         onClick={() => onOrderChange?.(moveInOrder(order, k, k + 1))}
-                        aria-label="뒤로"
+                        aria-label={t('order.down')}
                       >
                         ↓
                       </button>
@@ -204,13 +206,14 @@ export default function ResultModal({
             {groups.map((members, i) => (
               <div key={i} className="result-group">
                 <h3>
-                  {i + 1}조 <small>{members.length}명</small>
+                  {groupName(i)} <small>{t('people', { n: members.length })}</small>
                   {orderBadge(i)}
                   {showRoles && (
                     <button
                       type="button"
                       className="ghost reroll no-print"
-                      title="이 조의 역할 다시 뽑기"
+                      title={t('roles.rerollOne')}
+                      aria-label={t('roles.rerollOne')}
                       onClick={() => rerollOne(i)}
                     >
                       🎲
@@ -233,19 +236,19 @@ export default function ResultModal({
 
         <div className="row gap end no-print">
           <button type="button" className="ghost" onClick={copy}>
-            {copied ? '복사됨 ✓' : '결과 복사'}
+            {copied ? t('copied') : t('copy')}
           </button>
           <button type="button" className="ghost" onClick={() => window.print()}>
-            🖨 인쇄
+            {t('print')}
           </button>
           {onExit && (
             <button type="button" className="ghost" onClick={onExit}>
-              설정 변경
+              {t('changeSettings')}
             </button>
           )}
           {onRestart && (
             <button type="button" className="primary" onClick={onRestart}>
-              다시 하기
+              {t('again')}
             </button>
           )}
         </div>

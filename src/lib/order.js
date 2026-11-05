@@ -30,10 +30,10 @@ export function moveInOrder(order, from, to) {
   return next;
 }
 
-export function orderToText(order, roles = []) {
-  const lines = order.map((g, k) => {
-    const p = roles[g]?.presenter;
-    return `${k + 1}. ${g + 1}조${p ? ` (발표자: ${p})` : ''}`;
-  });
-  return ['[발표 순서]', ...lines].join('\n');
+/** 복사용 텍스트. t는 i18n 번역 함수 */
+export function orderToText(order, roles = [], t) {
+  const lines = order.map((g, k) =>
+    t('text.orderLine', { k: k + 1, group: t('group', { n: g + 1 }), presenter: roles[g]?.presenter }),
+  );
+  return [t('text.orderTitle'), ...lines].join('\n');
 }

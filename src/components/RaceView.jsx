@@ -5,10 +5,12 @@ import ResultModal from './ResultModal.jsx';
 import { makeAssignment } from '../lib/seats.js';
 import { hasAnyRole, pickRoles } from '../lib/roles.js';
 import { makeOrder } from '../lib/order.js';
+import { LangSwitch, translate, useI18n } from '../i18n/index.jsx';
 
 const emptyGroups = (sizes) => sizes.map(() => []);
 
-export default function RaceView({ names, sizes, settings, onExit, onRestart }) {
+export default function RaceView({ names, sizes, settings, title, lang, setLang, onExit, onRestart }) {
+  const { t } = useI18n();
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
   const raceRef = useRef(null);
@@ -30,10 +32,12 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
   const roleOptions = { presenter: settings.pickPresenter, mc: settings.pickMC };
   const [order, setOrder] = useState(null); // 발표 순서 (조 번호 배열)
 
-  const showToast = useCallback((title, sub = null) => {
-    setToast({ title, sub, id: Date.now() });
+  /** toast = { groupIdx, role } — 문구는 렌더링 시 현재 언어로 만든다 */
+  const showToast = useCallback((data) => {
+    const long = Boolean(data.role?.presenter || data.role?.mc);
+    setToast({ ...data, long, id: Date.now() });
     clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), sub ? 2600 : 1600);
+    toastTimer.current = setTimeout(() => setToast(null), long ? 2600 : 1600);
   }, []);
 
   // 레이스(맵) 생성
@@ -48,16 +52,14 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
       a.groups[idx].push({ name: ball.name, color: ball.color, rank });
       if (a.groups[idx].length >= sizes[idx]) {
         // 조가 완성되는 순간 그 조의 발표자 / MC를 뽑는다
-        let sub = null;
+        let role = null;
         if (hasAnyRole(opts)) {
-          const role = pickRoles(a.groups[idx], opts);
+          role = pickRoles(a.groups[idx], opts);
           a.roles[idx] = role;
           setRoles([...a.roles]);
-          sub = [role.presenter && `📢 발표자 ${role.presenter}`, role.mc && `🎙️ MC ${role.mc}`]
-            .filter(Boolean)
-            .join('  ·  ');
         }
-        showToast(`${idx + 1}조 완성!`, sub);
+        // 문구는 렌더링할 때 현재 언어로 만든다 (데이터만 넘김)
+        showToast({ groupIdx: idx, role });
         if (idx < sizes.length - 1) a.idx = idx + 1;
       }
       setGroups(a.groups.map((g) => [...g]));
@@ -132,6 +134,13 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
     race.camMode = camMode;
   }, [speed, phase, camMode, mapSeed]);
 
+  // 캔버스 안 "N등 / N位" 문구를 언어에 맞춘다
+  useEffect(() => {
+    const race = raceRef.current;
+    if (!race) return;
+    race.rankText = (rank, name) => translate(lang, 'canvas.rank', { rank, name });
+  }, [lang, mapSeed]);
+
   const start = useCallback(() => {
     raceRef.current?.start();
     setPhase('running');
@@ -178,19 +187,29 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
   };
 
   const exit = () => {
-    if ((phase === 'running' || phase === 'paused') && !confirm('진행 중인 레이스를 그만두고 설정으로 돌아갈까요?')) return;
+    if ((phase === 'running' || phase === 'paused') && !confirm(t('race.confirmExit'))) return;
     onExit();
   };
+
+  const toastRole = toast?.role;
+  const toastSub = toastRole
+    ? [
+        toastRole.presenter && t('toast.presenter', { name: toastRole.presenter }),
+        toastRole.mc && t('toast.mc', { name: toastRole.mc }),
+      ]
+        .filter(Boolean)
+        .join('  ·  ')
+    : null;
 
   return (
     <div className="race">
       <header className="race-bar">
-        <h1>{settings.title}</h1>
+        <h1>{title}</h1>
         <div className="race-status">
-          도착 <b>{arrived}</b> / {names.length}
+          {t('race.arrived')} <b>{arrived}</b> / {names.length}
           {phase !== 'done' && phase !== 'ready' && (
             <span className="now">
-              → <b>{current + 1}조</b> 배정 중
+              → <b>{t('group', { n: current + 1 })}</b> {t('race.assigning')}
             </span>
           )}
         </div>
@@ -198,21 +217,21 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
           {phase === 'ready' && (
             <>
               <button type="button" className="ghost" onClick={() => setMapSeed((s) => s + 1)}>
-                🔀 맵 다시 만들기
+                {t('race.remap')}
               </button>
               <button type="button" className="primary" onClick={start}>
-                ▶ 시작
+                {t('race.start')}
               </button>
             </>
           )}
           {(phase === 'running' || phase === 'paused') && (
             <button type="button" className="primary" onClick={togglePause}>
-              {phase === 'running' ? '⏸ 일시정지' : '▶ 계속'}
+              {phase === 'running' ? t('race.pause') : t('race.resume')}
             </button>
           )}
           {phase === 'done' && (
             <button type="button" className="primary" onClick={() => setShowResult(true)}>
-              결과 보기
+              {t('race.showResult')}
             </button>
           )}
           <div className="segmented small">
@@ -223,22 +242,19 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
             ))}
           </div>
           <div className="segmented small">
-            {[
-              ['leader', '선두'],
-              ['last', '꼴찌'],
-              ['free', '자유'],
-            ].map(([v, label]) => (
+            {['leader', 'last', 'free'].map((v) => (
               <button key={v} type="button" className={camMode === v ? 'active' : ''} onClick={() => setCamMode(v)}>
-                {label}
+                {t(`cam.${v}`)}
               </button>
             ))}
           </div>
           <button type="button" className="ghost" onClick={onRestart}>
-            ↺ 처음부터
+            {t('race.restart')}
           </button>
           <button type="button" className="ghost" onClick={exit}>
-            ⚙ 설정
+            {t('race.settings')}
           </button>
+          <LangSwitch lang={lang} onChange={setLang} />
         </div>
       </header>
 
@@ -248,16 +264,16 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
           {phase === 'ready' && (
             <div className="stage-overlay">
               <button type="button" className="primary big" onClick={start}>
-                ▶ 시작
+                {t('race.start')}
               </button>
-              <p>스페이스바로도 시작할 수 있어요 · 휠/미니맵으로 맵 미리보기</p>
+              <p>{t('race.hint')}</p>
             </div>
           )}
-          {phase === 'paused' && <div className="paused-label">일시정지</div>}
+          {phase === 'paused' && <div className="paused-label">{t('race.paused')}</div>}
           {toast && (
-            <div key={toast.id} className={`toast ${toast.sub ? 'long' : ''}`}>
-              {toast.title}
-              {toast.sub && <div className="toast-sub">{toast.sub}</div>}
+            <div key={toast.id} className={`toast ${toast.long ? 'long' : ''}`}>
+              {t('toast.groupDone', { group: t('group', { n: toast.groupIdx + 1 }) })}
+              {toastSub && <div className="toast-sub">{toastSub}</div>}
             </div>
           )}
         </div>
@@ -266,7 +282,7 @@ export default function RaceView({ names, sizes, settings, onExit, onRestart }) 
 
       {showResult && (
         <ResultModal
-          title={settings.title}
+          title={title}
           groups={groups}
           layout={layout}
           assignment={assignment}

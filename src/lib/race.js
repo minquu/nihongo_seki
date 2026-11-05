@@ -56,6 +56,7 @@ export class Race {
     this.paused = false;
     this.camY = 0;
     this.camMode = 'leader';
+    this.rankText = (rank, name) => `${rank}. ${name}`; // RaceView에서 언어별로 교체
     this.shapes = []; // { body, kind, hub? }
     this.movers = []; // (tick) => void
     this.balls = [];
@@ -101,7 +102,8 @@ export class Race {
         frictionAir: 0.008,
         density: 0.0015,
       });
-      const ball = { name, label: splitName(name).main, color: ballColor(i), body, still: 0, done: false };
+      const { main, reading } = splitName(name);
+      const ball = { name, main, reading, color: ballColor(i), body, still: 0, done: false };
       this.balls.push(ball);
       this.ballByBodyId.set(body.id, ball);
       Composite.add(this.world, body);
@@ -303,6 +305,11 @@ export class Race {
       this.world,
       Bodies.rectangle(W / 2, this.finishY + 120, W + 200, 40, { isStatic: true, label: 'floor' }),
     );
+  }
+
+  /** 공 위에 쓸 짧은 이름: 화면 언어와 상관없이 한글 이름 (카타카나 읽기는 생략) */
+  labelOf(ball) {
+    return ball.main;
   }
 
   // ───────────────────────── 진행 ─────────────────────────
@@ -535,9 +542,9 @@ export class Race {
       if (showNames) {
         ctx.lineWidth = 3 / scale;
         ctx.strokeStyle = 'rgba(8,10,25,0.9)';
-        ctx.strokeText(ball.label, x, y - r - 3);
+        ctx.strokeText(this.labelOf(ball), x, y - r - 3);
         ctx.fillStyle = '#fff';
-        ctx.fillText(ball.label, x, y - r - 3);
+        ctx.fillText(this.labelOf(ball), x, y - r - 3);
       }
     }
 
@@ -554,7 +561,7 @@ export class Race {
       ctx.stroke();
       ctx.fillStyle = '#fff';
       ctx.font = `bold ${Math.min(30, 16 / scale)}px system-ui, sans-serif`;
-      ctx.fillText(`${e.rank}등 ${e.ball.label}`, W / 2, e.y - 60 - p * 50);
+      ctx.fillText(this.rankText(e.rank, this.labelOf(e.ball)), W / 2, e.y - 60 - p * 50);
     }
     ctx.globalAlpha = 1;
     this.effects = this.effects.filter((e) => e.t < 70);

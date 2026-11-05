@@ -1,7 +1,7 @@
-/** 줄바꿈 또는 쉼표로 구분된 이름 목록을 파싱한다. 중복 이름은 (2), (3)… 을 붙여 구분한다. */
+/** 줄바꿈 또는 쉼표(, 、 ，)로 구분된 이름 목록을 파싱한다. 중복 이름은 (2), (3)… 을 붙여 구분한다. */
 export function parseNames(text) {
   const raw = text
-    .split(/[\n,]/)
+    .split(/[\n,、，]/)
     .map((s) => s.trim())
     .filter(Boolean);
   const seen = new Map();
@@ -40,16 +40,21 @@ export function computeGroupSizes(total, mode, value, remainder = 'spread') {
   return sizes;
 }
 
-export function groupsToText(title, groups, roles = []) {
+/** 복사용 텍스트. t는 i18n 번역 함수 */
+export function groupsToText(title, groups, roles = [], t) {
   const lines = groups.map((members, i) => {
     const role = roles[i];
     const names = members.map((m) => {
       const tags = [];
-      if (role?.presenter === m.name) tags.push('발표자');
-      if (role?.mc === m.name) tags.push('MC');
-      return tags.length ? `${m.name}(${tags.join(', ')})` : m.name;
+      if (role?.presenter === m.name) tags.push(t('role.presenter'));
+      if (role?.mc === m.name) tags.push(t('role.mc'));
+      return tags.length ? `${m.name}${t('text.tags', { tags })}` : m.name;
     });
-    return `${i + 1}조 (${members.length}명): ${names.join(', ')}`;
+    return t('text.groupLine', {
+      group: t('group', { n: i + 1 }),
+      n: members.length,
+      names: names.join(t('text.nameSep')),
+    });
   });
   return [title, '', ...lines].join('\n');
 }

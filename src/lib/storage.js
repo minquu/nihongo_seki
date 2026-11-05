@@ -5,6 +5,7 @@ const KEYS = {
   rosters: `${PREFIX}rosters`,
   lastUsed: `${PREFIX}lastUsed`,
   lastResult: `${PREFIX}lastResult`,
+  lang: `${PREFIX}lang`,
 };
 
 function read(key, fallback) {
@@ -39,10 +40,14 @@ export const storage = {
   /** 마지막 결과 { title, groups, layout, assignment, savedAt } */
   loadLastResult: () => read(KEYS.lastResult, null),
   saveLastResult: (v) => write(KEYS.lastResult, v),
+
+  /** 화면 언어 'ko' | 'ja' */
+  loadLang: () => read(KEYS.lang, null),
+  saveLang: (v) => write(KEYS.lang, v),
 };
 
-export const formatDate = (ts) =>
-  new Date(ts).toLocaleString('ko-KR', {
+export const formatDate = (ts, locale = 'ko-KR') =>
+  new Date(ts).toLocaleString(locale, {
     month: 'long',
     day: 'numeric',
     hour: '2-digit',

@@ -4,17 +4,19 @@ import { rolesOf } from '../lib/roles.js';
 import RoleBadges from './RoleBadge.jsx';
 import Name from './Name.jsx';
 import { orderOf } from '../lib/order.js';
+import { useI18n } from '../i18n/index.jsx';
 
-const rowLabel = (row, n) => {
+const rowLabel = (t, row, n) => {
   if (n <= 1) return '';
-  if (n === 2) return row === 0 ? '앞' : '뒤';
-  return `앞에서 ${row + 1}번째`;
+  if (n === 2) return row === 0 ? t('seat.front') : t('seat.back');
+  return t('seat.nth', { n: row + 1 });
 };
 
 /**
  * 교실 자리 배치도. 팀 카드를 드래그하거나, 두 자리를 차례로 클릭하면 서로 바뀐다.
  */
 export default function SeatMap({ layout, groups, assignment, onChange, roles = [], order = null }) {
+  const { t } = useI18n();
   const [dragFrom, setDragFrom] = useState(null);
   const [selected, setSelected] = useState(null);
   const [over, setOver] = useState(null);
@@ -72,12 +74,12 @@ export default function SeatMap({ layout, groups, assignment, onChange, roles = 
       <div key={pos} className={cls} {...slotProps(pos)}>
         <div className="slot-label">{label}</div>
         {g == null ? (
-          <div className="slot-empty">빈 자리</div>
+          <div className="slot-empty">{t('seat.empty')}</div>
         ) : (
           <>
             <div className="team-name">
-              {g + 1}조 <small>{groups[g].length}명</small>
-              {orderOf(order, g) && <span className="order-badge">🎤 {orderOf(order, g)}번째 발표</span>}
+              {t('group', { n: g + 1 })} <small>{t('people', { n: groups[g].length })}</small>
+              {orderOf(order, g) && <span className="order-badge">🎤 {t('order.nthPresent', { n: orderOf(order, g) })}</span>}
             </div>
             <div className="desks">
               {groups[g].map((m) => {
@@ -104,24 +106,24 @@ export default function SeatMap({ layout, groups, assignment, onChange, roles = 
 
   return (
     <div className="classroom">
-      <div className="blackboard">칠판 · 교탁</div>
+      <div className="blackboard">{t('blackboard')}</div>
       <div className="bundans" style={{ gridTemplateColumns: `repeat(${layout.length}, minmax(0, 1fr))` }}>
         {layout.map((_, col) => (
           <div key={col} className="bundan">
-            <div className="bundan-label">{col + 1}분단</div>
+            <div className="bundan-label">{t('column', { n: col + 1 })}</div>
             {positions.map((p, pos) =>
-              p.col === col ? renderTeam(pos, rowLabel(p.row, layout[col])) : null,
+              p.col === col ? renderTeam(pos, rowLabel(t, p.row, layout[col])) : null,
             )}
           </div>
         ))}
       </div>
       {unseated.length > 0 && (
         <div className="unseated">
-          <div className="bundan-label">자리 미배정 (자리로 끌어다 놓으세요)</div>
+          <div className="bundan-label">{t('seat.unseated')}</div>
           <div className="unseated-list">{unseated.map(({ pos }) => renderTeam(pos, ''))}</div>
         </div>
       )}
-      <p className="hint no-print">팀 카드를 드래그하거나, 두 자리를 차례로 클릭하면 자리가 바뀝니다.</p>
+      <p className="hint no-print">{t('seat.hint')}</p>
     </div>
   );
 }

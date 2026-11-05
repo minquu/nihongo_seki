@@ -1137,3 +1137,69 @@ textarea.names {
     color: #333 !important;
   }
 }
+
+/* ───────── 다국어(한국어 / 日本語) ───────── */
+/* 일본어 화면에서는 일본어 글꼴을 먼저 써서 한자가 한국식 글꼴 모양으로 나오지 않게 한다 */
+html:lang(ja) body,
+html:lang(ja) input,
+html:lang(ja) textarea,
+html:lang(ja) select,
+html:lang(ja) button {
+  font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic UI', 'Yu Gothic',
+    'Meiryo', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
+}
+/* 일본어 문장은 단어 사이 공백이 없으므로 keep-all 대신 일본어 줄바꿈 규칙을 쓴다 */
+html:lang(ja) .hint,
+html:lang(ja) small,
+html:lang(ja) .mismatch,
+html:lang(ja) .order-members {
+  word-break: normal;
+  line-break: strict;
+}
+/* 이름은 화면 언어와 상관없이: 위 = 한글 이름(중간에서 끊지 않음), 아래 = 카타카나(일본어 규칙) */
+.name-main {
+  word-break: keep-all;
+}
+.name-reading {
+  word-break: normal;
+  line-break: strict;
+}
+.lang-switch button:lang(ja) {
+  font-family: 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic', 'Meiryo', system-ui, sans-serif;
+}
+
+/* 버튼 문구가 중간에서 어색하게 끊기지 않게 (좁은 화면에서는 줄바꿈 허용) */
+button {
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  button {
+    white-space: normal;
+  }
+}
+
+.setup-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.lang-switch {
+  align-self: center;
+}
+.bundan-name {
+  width: auto;
+  min-width: 52px;
+  white-space: nowrap;
+}
+
+/* 토스트: 긴 일본어 문구(발표자・司会 이름)도 캔버스 안에서 줄바꿈 */
+.toast {
+  width: max-content;
+  max-width: 92%;
+  white-space: normal;
+}
+.toast-sub {
+  white-space: normal;
+  line-height: 1.5;
+}

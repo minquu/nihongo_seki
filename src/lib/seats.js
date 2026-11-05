@@ -39,16 +39,20 @@ export function slotPositions(layout) {
   return out;
 }
 
-export function seatsToText(layout, assignment) {
+/** 복사용 텍스트. t는 i18n 번역 함수 */
+export function seatsToText(layout, assignment, t) {
   const pos = slotPositions(layout);
+  const groupName = (g) => t('group', { n: g + 1 });
   const lines = layout.map((n, col) => {
     const teams = pos
       .map((p, i) => ({ ...p, g: assignment[i] }))
       .filter((p) => p.col === col)
-      .map((p) => (p.g == null ? '(빈 자리)' : `${p.g + 1}조`));
-    return `${col + 1}분단: ${teams.join(' → ')}`;
+      .map((p) => (p.g == null ? t('text.emptySeat') : groupName(p.g)));
+    return t('text.seatLine', { col: t('column', { n: col + 1 }), teams: teams.join(' → ') });
   });
   const unseated = assignment.slice(pos.length).filter((g) => g != null);
-  if (unseated.length) lines.push(`자리 미배정: ${unseated.map((g) => `${g + 1}조`).join(', ')}`);
-  return ['[자리 배치] (앞 → 뒤)', ...lines].join('\n');
+  if (unseated.length) {
+    lines.push(t('text.unseated', { teams: unseated.map(groupName).join(t('text.nameSep')) }));
+  }
+  return [t('text.seatTitle'), ...lines].join('\n');
 }
