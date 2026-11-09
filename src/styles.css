@@ -940,6 +940,10 @@ textarea.names {
 .modal-tools .tabs {
   margin-bottom: 0;
 }
+.reroll-tools {
+  margin: -6px 0 16px;
+  flex-wrap: wrap;
+}
 .role-legend {
   display: inline-flex;
   gap: 6px;

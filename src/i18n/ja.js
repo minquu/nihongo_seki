@@ -130,6 +130,7 @@ const ja = {
   'roles.rerollOne': 'この班の役割を選び直す',
   'seat.reshuffle': '🎲 席をランダムに並べ直す',
   'order.reroll': '🎲 発表順を決め直す',
+  'rerollBoth': '🎲 役割と発表順をまとめて決め直す',
   'order.manual': '↑↓ボタンで手動でも入れ替えられます',
   'order.up': '前へ',
   'order.down': '後ろへ',

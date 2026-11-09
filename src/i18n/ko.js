@@ -136,6 +136,7 @@ const ko = {
   'roles.rerollOne': '이 조의 역할 다시 뽑기',
   'seat.reshuffle': '🎲 자리 랜덤 재배치',
   'order.reroll': '🎲 발표 순서 다시 뽑기',
+  'rerollBoth': '🎲 역할 + 발표 순서 함께 다시 뽑기',
   'order.manual': '↑↓ 버튼으로 직접 바꿀 수도 있어요',
   'order.up': '앞으로',
   'order.down': '뒤로',

@@ -68,6 +68,19 @@ export default function ResultModal({
     onRolesChange?.(next);
   };
   const rerollAll = () => rerollGroups(groups.map((_, i) => i));
+
+  // 발표 순서 다시 뽑기: 조가 2개 이상이면 직전과 똑같은 순서는 피한다
+  const rerollOrder = () => {
+    let next = makeOrder(groups.length);
+    for (let k = 0; k < 20 && groups.length > 1 && next.join() === order?.join(); k++) {
+      next = makeOrder(groups.length);
+    }
+    onOrderChange?.(next);
+  };
+  const rerollBoth = () => {
+    rerollAll();
+    rerollOrder();
+  };
   const rerollOne = (i) => rerollGroups([i]);
 
   const copy = async () => {
@@ -120,12 +133,29 @@ export default function ResultModal({
                     </span>
                   ))}
               </span>
-              <button type="button" className="ghost" onClick={rerollAll}>
-                {t('roles.reroll')}
-              </button>
             </>
           )}
         </div>
+
+        {(showRoles || order) && (
+          <div className="row gap no-print reroll-tools">
+            {showRoles && order && (
+              <button type="button" className="primary" onClick={rerollBoth}>
+                {t('rerollBoth')}
+              </button>
+            )}
+            {showRoles && (
+              <button type="button" className="ghost" onClick={rerollAll}>
+                {t('roles.reroll')}
+              </button>
+            )}
+            {order && (
+              <button type="button" className="ghost" onClick={rerollOrder}>
+                {t('order.reroll')}
+              </button>
+            )}
+          </div>
+        )}
 
         {tab === 'seats' && (
           <>
@@ -159,9 +189,6 @@ export default function ResultModal({
         {tab === 'order' && (
           <>
             <div className="row gap no-print seat-tools">
-              <button type="button" className="ghost" onClick={() => onOrderChange?.(makeOrder(groups.length))}>
-                {t('order.reroll')}
-              </button>
               <span className="muted small-text">{t('order.manual')}</span>
             </div>
             <ol className="order-list">
