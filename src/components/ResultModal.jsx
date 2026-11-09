@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { groupsToText } from '../lib/groups.js';
 import { makeOrder, moveInOrder, orderOf, orderToText } from '../lib/order.js';
-import { hasAnyRole, pickRoles, ROLE_INFO } from '../lib/roles.js';
+import { hasAnyRole, nextUsed, pickRoles, ROLE_INFO } from '../lib/roles.js';
 import { makeAssignment, seatsToText } from '../lib/seats.js';
 import { formatDate, storage } from '../lib/storage.js';
 import { useI18n } from '../i18n/index.jsx';
@@ -53,12 +53,22 @@ export default function ResultModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, groups, layout, assignment, roles, order, savedAt, roleOptions.presenter, roleOptions.mc]);
 
-  const rerollAll = () => onRolesChange?.(groups.map((g) => pickRoles(g, roleOptions)));
-  const rerollOne = (i) => {
+  // 조별로 이번 결과에서 역할을 맡았던 사람들. 다시 뽑을 때 안 맡아 본 사람을 먼저 뽑는다.
+  const [usedRoles, setUsedRoles] = useState(() => groups.map(() => []));
+
+  const rerollGroups = (targets) => {
     const next = groups.map((_, j) => roles[j] ?? null);
-    next[i] = pickRoles(groups[i], roleOptions);
+    const nextUsedList = groups.map((_, j) => usedRoles[j] ?? []);
+    for (const i of targets) {
+      const prev = roles[i] ?? null;
+      next[i] = pickRoles(groups[i], roleOptions, { prev, used: nextUsedList[i] });
+      nextUsedList[i] = nextUsed(groups[i], nextUsedList[i], prev, next[i]);
+    }
+    setUsedRoles(nextUsedList);
     onRolesChange?.(next);
   };
+  const rerollAll = () => rerollGroups(groups.map((_, i) => i));
+  const rerollOne = (i) => rerollGroups([i]);
 
   const copy = async () => {
     const parts = [groupsToText(title, groups, roles, t)];
